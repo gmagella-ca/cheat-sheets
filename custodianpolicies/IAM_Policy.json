@@ -1,0 +1,81 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "EC2Permissions",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeInstances",
+                "ec2:DeleteTags",
+                "ec2:DescribeTags",
+                "ec2:CreateTags",
+                "ec2:StopInstances"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "SESSendEmail",
+            "Effect": "Allow",
+            "Action": [
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "ForAllValues:StringLike": {
+                    "ses:Recipients": "you@example.com"
+                }
+            }
+        },
+        {
+            "Sid": "OtherPermissions",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:GetLogEvents",
+                "logs:FilterLogEvents",
+                "logs:CreateLogGroup",
+                "logs:PutLogEvents",
+                "cloudwatch:PutMetricData",
+                "cloudwatch:GetMetricStatistics",
+                "iam:ListAccountAliases"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "SQSPermissions",
+            "Effect": "Allow",
+            "Action": [
+                "sqs:DeleteMessage",
+                "sqs:GetQueueUrl",
+                "sqs:ListDeadLetterSourceQueues",
+                "sqs:ChangeMessageVisibility",
+                "sns:Publish",
+                "sqs:DeleteMessageBatch",
+                "sqs:SendMessageBatch",
+                "sqs:ReceiveMessage",
+                "sqs:SendMessage",
+                "sqs:GetQueueAttributes",
+                "sqs:ListQueueTags",
+                "sqs:ChangeMessageVisibilityBatch"
+            ],
+            "Resource": [
+                "arn:aws:sqs:us-east-1:<accoundid>:cloud-custodian-mailer",
+                "arn:aws:sns:us-east-1:<accountid>:cloud-custodian-mailer"
+            ]
+        },
+        {
+            "Sid": "OptionalTerminate",
+            "Effect": "Allow",
+            "Action": "ec2:TerminateInstances",
+            "Resource": "<CAREFULL> usually *",
+            "Condition": {
+                "ForAnyValue:StringEquals": {
+                    "ec2:Region": "eu-central-1" #optional for protection...
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,26 @@
+policies:
+- name: ec2-auto-tag-user
+  resource: ec2
+  mode:
+    type: cloudtrail
+    role: arn:aws:iam::<accountid>:role/custodian-auto-tagger
+    events:
+      - RunInstances
+  filters:
+    - tag:CreatorName: absent
+  actions:
+    - type: auto-tag-user
+      tag: CreatorName
+
+- name: s3-auto-tag-user
+  resource: s3
+  mode:
+    type: cloudtrail
+    role: arn:aws:iam::<accountid>:role/custodian-auto-tagger
+    events:
+      - CreateBucket
+  filters:
+    - tag:ResourceCreator: absent
+  actions:
+    - type: auto-tag-owner
+      tag: ResourceCreator

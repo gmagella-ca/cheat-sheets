@@ -1,0 +1,89 @@
+vars:
+
+  notification_actionEmail: &notify_actionEmail
+  - type: notify
+    template: new_default
+    to:
+      - resource-owner
+      - you@example.com
+    transport:
+      type: sqs
+      queue: https://sqs.us-east-1.amazonaws.com/<accountid>/cloud-custodian-mailer
+
+  notification_actionSlack: &notify_actionSlack
+  - type: notify
+    slack_template: slack_default
+    to:
+      - https://hooks.slack.com/services/XXX/YYY/XXX
+    transport:
+      type: sqs
+      queue: https://sqs.us-east-1.amazonaws.com/<accountid>/cloud-custodian-mailer
+
+  required_tags: &required_tags
+  - or:
+    - "tag:App": absent
+    - "tag:Env": absent
+    - "tag:Owner": absent 
+
+policies:
+  - name: ec2-tag-compliance-mark
+    resource: ec2
+    comment: |
+      Mark non-compliant, Non-ASG EC2 instances with stoppage in 4 days
+    filters:
+      - "State.Name": running
+      - "tag:aws:autoscaling:groupName": absent
+      - "tag:maid_status": absent
+      - << : *required_tags
+    actions:
+      - type: mark-for-op
+        op: stop
+        days: 4
+      - << : *notify_actionEmail
+        subject: "These instances will be stopped in 4 days unless you add the appropriate tags (App, Env, Owner)"
+      - << : *notify_actionSlack
+        violation_desc: "These instances are missing required tags (App, Env and Owner)"
+        action_desc: "The resources on this notification will be *STOPPED* in 4 days if they are not compliant. Please tag these resources to avoid service interruption"
+
+  - name: ec2-tag-compliance-stop
+    resource: ec2
+    comment: |
+      Stop pooly tagget instances and schedule termination
+    mode:
+      type: periodic
+      schedule: rate(12 hours)
+      role: arn:aws:iam::<accountid>:role/custodian-auto-tagger
+    filters:
+      - type: marked-for-op
+        op: stop
+      - << : *required_tags
+    actions:
+      - stop
+      - type: mark-for-op
+        op: terminate
+        days: 5
+      - << : *notify_actionEmail
+        subject: "These instances WERE be stopped. They'll be TERMINATED in 5 days unless you add the appropriate tags (App, Env, Owner)"
+      - << : *notify_actionSlack
+        violation_desc: "These instances are missing required tags (App, Env and Owner)"
+        action_desc: "*ATENTION* The resources on this notification will be *TERMINATED* in 5 days if they are not compliant. Please tag these resources to avoid service interruption."
+
+  - name: ec2-tag-compliance-terminate
+    resource: ec2
+    comment: |
+      Terminate pooly tagget instances.
+    mode:
+      type: periodic
+      schedule: rate(12 hours)
+      role: arn:aws:iam::<accountid>:role/custodian-auto-tagger
+    filters:
+      - type: marked-for-op
+        op: terminate
+      - << : *required_tags
+    actions:
+      - terminate
+      - << : *notify_actionEmail
+        subject: "These instances WERE TERMINATED. they didn't had the appropriate tags (App, Env, Owner)"
+      - << : *notify_actionSlack
+        violation_desc: "These instances were missing required tags (App, Env and Owner)"
+        action_desc: "*ATENTION* these resources were *TERMINATED*."
