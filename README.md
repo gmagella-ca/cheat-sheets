@@ -1,4 +1,4 @@
-# cheat-sheets
+# Cheat-sheets
 
 This repo its to hold some cheat-sheets I've came across over the years.
 The idea here is having a quick reference for commands, and help me (and hopefuly other people) remember a bunch of useful commands.
