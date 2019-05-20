@@ -1,8 +1,8 @@
-## Build docker image
+# Docker cheat-sheet
 
 These are some handy docker commands (use of sudo is not required if you have appropriate permissions):
 
-## Build a docker image:
+Build a docker image:
 ```
 $ cd /path/to/Dockerfile
 $ [sudo] docker build .
@@ -25,16 +25,20 @@ Run an image in a new container daemonized
 $ [sudo] docker run -d <image_name>
 ```
 
+run an image exposing port 80 to your localhost 8080
+```
+$ [sudo] docker run -d <image_name> -p 8080:80
+```
+
+Hop inside the container (like SSH) being able to hop off (note: for alpine use /bin/sh):
+```
+docker exec -it <mycontainer> /bin/bash
+```
+
 Run an image in interactive mode with the command `/bin/bash`
 
 ```
 $ [sudo] docker run -i -t <image_name> /bin/bash
-```
-
-Run an image in interactive mode with the command `/bin/bash` and link the ports.
-
-```
-$ [sudo] docker run -i -t --link <docker_container_name>:<docker_container_alias> <image_name> /bin/bash
 ```
 
 Run an image with an ENTRYPOINT command in interactive mode with the command `/bin/bash`
