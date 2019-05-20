@@ -1,6 +1,3 @@
-/custodianpolicies/privatepolicies/*
-/custodianpolicies/output/*
-/custodianpolicies/writing-policies/*
-
-
-
+custodianpolicies/privatepolicies
+custodianpolicies/output
+custodianpolicies/writing-policies
