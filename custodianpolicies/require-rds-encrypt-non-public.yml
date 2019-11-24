@@ -1,0 +1,43 @@
+vars:
+  notification_actionEmail: &notify_actionEmail
+  - type: notify
+    template: new_default
+    to:
+      - resource-owner
+      - you@example.com
+    transport:
+      type: sqs
+      queue: https://sqs.us-east-1.amazonaws.com/<accountid>/cloud-custodian-mailer
+
+  notification_actionSlack: &notify_actionSlack
+  - type: notify
+    slack_template: slack_default
+    to:
+      - https://hooks.slack.com/services/AAA/BBB/CCC
+    transport:
+      type: sqs
+      queue: https://sqs.us-east-1.amazonaws.com/<accountid>/cloud-custodian-mailer
+
+policies: 
+
+- name: require-rds-encrypt-and-non-public
+  resource: rds
+  mode: 
+    - type: cloudtrail
+    - role: arn:aws:iam::724759190780:role/custodian-auto-tagger
+    - events:
+      - CreateDBInstance
+  filters:
+    - or
+    - type: config-compliance:
+      eval_filters:
+      - Encrypted: false
+      - PubliclyAvailable: true
+  actions:
+    - type: delete
+    - skip-snapshot: true
+    - << : *notify_actionEmail
+      subject: "Policy violation! The reported RDS instance is either public or not encrypted."
+    - << : *notify_actionSlack
+      violation_desc: "This (these) RDS instances are not compliant with company policy"
+      action_desc: "The resources on this notification were *DELETE*. Please do not create publicly available or not encrypted RDS instances."

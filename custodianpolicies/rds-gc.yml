@@ -1,0 +1,21 @@
+- name: rds-unused-mark
+  resource: rds
+  description: | 
+    Take the average connections over 14 days and mark unused instances.
+  filters:
+    - "tag:custodian_cleanup": absent
+    - type: value
+      value_type: age
+      key: InstanceCreateTime
+      value: 14
+      op: gt
+    - type: metrics
+      name: DatabaseConnections
+      days: 14
+      value: 0
+      op: equal
+  - actions:
+    - type: mark-for-op
+      tag: "custodian_cleanup"
+      op: stop
+      days: 5

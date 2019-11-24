@@ -1,0 +1,18 @@
+policies:
+  - name: asg-unencrypted
+    resource: asg
+    filters:
+      - type: not-encripted
+      exclude_images: true
+  - name: kinesis-unencrypted
+    resource: kinesis
+    filters:
+      KeyId: absent
+  - name: ec2-encrypted
+    resources: ec2
+    filters:
+      - type: ebs
+        key: Encrypted
+        value: false
+        spik-devices: ["dev/xvda", "dev/sda1"]\
+        

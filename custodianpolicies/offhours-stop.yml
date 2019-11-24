@@ -1,0 +1,12 @@
+policies:
+  - name: offhours-stop
+    resource: ec2
+    filters:
+        - vpcId: XXX
+        - type: offhour
+          weekends: false
+          default_tz: est
+          tag: downtime
+          opt-out: true
+          onhour: 8
+          offhour: 20

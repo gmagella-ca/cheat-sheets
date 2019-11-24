@@ -1,0 +1,113 @@
+vars:
+  accounts_url: &accounts_url s3://mybucket/myaccounts.json
+
+policies:
+  - name: ecr-cross-account
+    resource: ecr
+    filters:
+      -type: cross-account
+       whitelist_from:
+        expr: "accounts.*.accountNumber"
+        url: *accounts_url
+    actions:
+      - <<: *notify_action
+        subject: "[Custodian]: ECR Available externally"
+      - type: remove-statements
+        statement_ids: matched
+
+  #Enable shield on cloudfront distributions:
+  - name: activate-cloudfront-shield
+    resource: distribution
+    region: us-east-1
+    filters:
+      - type: shield-enabled
+        state: false
+    actions:
+      - type: set-shield
+        state: true
+
+#Enable shield on public available ELBs:
+  - name: activate-elb-shield
+    resource: elb
+    filters:
+      - type: value
+        key: Scheme
+        value: internal
+        op: not-equal
+      - type: shield-enabled
+        state: false
+    actions:
+      - type: set-shield
+        state: true
+
+  #Enable WAF on cloudfront distributions:
+  - name: activate-cloudfront-waf
+    resource: distribution
+    region: us-east-1
+    filters:
+      - Status: Deployed 
+      - WebACLId: empty
+    actions:
+      - type: set-waf
+        web-acl: global-default
+        state: true
+
+#Enable WAF on public available ELBs:
+  - name: activate-elb-waf
+    resource: elb
+    filters:
+      - type: value
+        key: Scheme
+        value: internal
+        op: not-equal
+      - type: waf-enabled
+        state: false
+    actions:
+      - type: set-waf
+        web-acl: regional-default
+        state: true
+
+
+  - name: user-missing-mfa
+    resource: iam-user
+    region: us-east-1
+    filters:
+      - type: credential
+        key: password-enabled
+      - type: mfa-device
+        value: empty
+    actions:
+    - <<: *notify_action
+      subject: "Enable MFA on your AWS User"
+
+  - name: iam-password-policy
+    resource: account
+    region: us-east-1
+    filteres:
+      - or:
+        - type: password-policy
+          key: "MaxPasswordAge"
+          value: 30
+          op: gte
+        - type: "password-policy"
+          key: "MinimumPasswordLength"
+          value: 8
+          op: lte
+
+  - name: root-login-detected
+    resource: account
+    description: | 
+      Notify on root user logins
+    mode:
+      type: cloudtrail
+      role: arn:aws:iam::{account_id}:role/Eg
+      events:
+        - ConsoleLogin
+    filters:
+      - type: event
+        key: "detailt.userIdentity.type"
+        value: "Root"
+    actions:
+      - <<: *notify_action
+        subject: "AWS Root Console Login Alert!"
+

@@ -1,0 +1,23 @@
+#Look-up c7n_guardian:
+#
+name: ec2-guard-remediate
+resource: ec2
+mode: 
+  type: guard-duty
+  member-role: arn
+filters:
+  #filter for medium and high severity events
+  -type: event
+  key: detail.severity
+  op: gte
+  value: 4.5
+actions:
+  #Remove any instance profile
+  - type: set-instance-profile
+    profile: null
+  #stop the instance
+  - stop
+  #snapshot the disk for forensics
+  - type: snapshot
+    copy_tags: [Name]
+  

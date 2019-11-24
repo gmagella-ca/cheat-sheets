@@ -1,0 +1,60 @@
+#© 2018 Amazon Web Services, Inc. or its affiliates. All Rights Reserved. This AWS Content is provided subject to the terms of the AWS Customer Agreement available at http://aws.amazon.com/agreement or other written agreement between Customer and Amazon Web Services, Inc. 
+# No IAM users in the Account 
+ 
+# Description: 
+# When Active Directory Federation is used, there should be no reason for IAM users to exist in the account. 
+ 
+# Rationale: 
+ 
+# AD Federation allows users to assume a temporary role in the AWS account. If IAM users are used it might indicate that the account has been compromised. 
+ 
+# This policy will send a notification to Security Hub if IAM users are created in the account.  
+vars:
+
+  notification_actionEmail: &notify_actionEmail
+  - type: notify
+    template: new_default
+    to:
+      - resource-owner
+      - you@example.com
+    transport:
+      type: sqs
+      queue: https://sqs.us-east-1.amazonaws.com/<accountid>/cloud-custodian-mailer
+
+  notification_actionSlack: &notify_actionSlack
+  - type: notify
+    slack_template: slack_default
+    to:
+      - https://hooks.slack.com/services/AAA/BBB/CCC
+    transport:
+      type: sqs
+      queue: https://sqs.us-east-1.amazonaws.com/<accountid>/cloud-custodian-mailer
+
+policies: 
+  - name: IAM-user-created-in-the-account 
+    resource: iam-user 
+    description: | 
+      If IAM users are created in the account this will send a notification to Security Hub. 
+    mode:  
+      type: cloudtrail 
+      events:  
+        - source: iam.amazonaws.com 
+          event: CreateUser 
+          ids: responseElements.user.userName  
+      role: arn:aws:iam::{account_id}:role/custodian-full
+      #member-role: arn:aws:iam::{account_id}:role/CloudCustodianAdminRole 
+      packages: [boto3, botocore, urllib3]  
+    actions: 
+      - type: post-finding 
+        severity_normalized: 30 
+        region: eu-central-1
+        types: 
+          - "TTPs/Privilege Escalation" 
+        confidence: 100 
+        compliance_status: WARNING 
+        recommendation: "Avoid the use of IAM users when you are using Active Directory Federation" 
+      - << : *notify_actionEmail
+        subject: "WARNING: Escalation of privileges, IAM user created."
+      - << : *notify_actionSlack
+        violation_desc: "WARNING: Escalation of privileges, IAM user created."
+        action_desc: "Avoid the use of IAM users when you are using Active Directory Federation"

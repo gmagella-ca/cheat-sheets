@@ -1,0 +1,31 @@
+policies:
+  - name: security-group-restrict-admin-ingress
+    resource: aws.security-group
+    comment: "Remove rules allowing unrestricted ingress to ports [22, 3389]"
+    filters:
+      - "tag:c7n_exempt": absent
+      - type: ingress
+        Ports: [22, 3389]
+        Cidr:
+          value:
+            - "0.0.0.0/0"
+            - "::/0"
+          op: in
+    mode:
+      type: cloudtrail
+      events:
+        - source: ec2.amazonaws.com
+          event: AuthorizeSecurityGroupIngress
+          ids: "requestParameters.groupId"
+    actions:
+      - type: notify
+        slack_template: slack
+        to:
+          - https://hooks.slack.com/services/abcdef
+        transport:
+          type: sqs
+          queue: https://sqs.us-east-1.amazonaws.com/<accountid>/cloud-custodian-mailer
+        action_desc: |
+          AWS security group allowed unrestricted access to ports [22, 3389].
+        violation_desc: |
+          AWS security group allowed unrestricted access to ports [22, 3389].

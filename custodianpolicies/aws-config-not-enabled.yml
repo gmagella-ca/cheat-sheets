@@ -1,0 +1,13 @@
+policies:
+  - name: aws-config-not-enabled
+    resource: account
+    region: us-east-1
+    tags:
+      - level:high
+    description: | 
+      Scans for accounts which do not have Config enabled.
+    filters:
+      - type: check-config
+      all-resources: true
+      global-resources: true
+      running: true

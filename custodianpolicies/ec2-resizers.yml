@@ -1,0 +1,24 @@
+policies:
+  - name: ec2-resizer
+    resource: ec2
+    filters:
+      - type: value
+        key: Instance-Type
+        op: in
+        value: 
+          - m4.10xlarge
+          - m4.4xlarge
+      - type: instance-age
+        value: 12
+      - type: metrics
+        name: CPUUtilization
+        days: 14
+        value: 3
+        op: less-than
+    actions:
+      - type: resize
+        restart: true
+        type-map:
+        m4.4xlarge: m4.2xlarge
+        m4.10xlarge: m4.2xlarge
+        

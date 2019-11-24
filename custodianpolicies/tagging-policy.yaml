@@ -19,6 +19,7 @@ vars:
       type: sqs
       queue: https://sqs.us-east-1.amazonaws.com/<accountid>/cloud-custodian-mailer
 
+
   required_tags: &required_tags
   - or:
     - "tag:App": absent
